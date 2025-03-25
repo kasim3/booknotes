@@ -1,0 +1,33 @@
+<!-- views/books.ejs -->
+<%- include('partials/header') %>
+
+<section class="page-title">
+  <h2>My Books</h2>
+</section>
+
+<div class="book-grid">
+  <% for (const book of books) { %>
+  <div class="book-card">
+    <div class="book-cover">
+      <img
+        src="<%= await coverUrl(book.isbn, 'M') %>"
+        alt="<%= book.title %> Cover"
+      />
+    </div>
+    <div class="book-details">
+      <h3 class="book-title"><%= book.title %></h3>
+      <p class="book-author">by <%= book.author %></p>
+      <p class="book-rating">Rating: <span>⭐ <%= book.rating %></span></p>
+      <p class="book-notes"><%= book.notes.substring(0, 100) %>...</p>
+    </div>
+    <div class="book-actions">
+      <a class="btn btn-edit" href="/books/edit/<%= book.id %>">Edit</a>
+      <form action="/books/<%= book.id %>?_method=DELETE" method="POST">
+        <button class="btn btn-delete" type="submit">Delete</button>
+      </form>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>
