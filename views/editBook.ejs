@@ -47,7 +47,11 @@
     <!-- Cover Preview -->
     <div class="cover-preview">
       <p>Cover Preview:</p>
-      <img src="<%= await coverUrl(book.isbn, 'M') %>" alt="Cover Preview" />
+      <img
+        src="<%= coverUrl(book.isbn, 'S') %>"
+        alt="Cover Preview"
+        onerror="this.onerror=null; this.src='<%= coverUrl(book.id, 'S', 'id') %>'"
+      />
     </div>
     <button type="submit">Update Book</button>
   </form>

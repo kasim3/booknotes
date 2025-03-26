@@ -1,0 +1,39 @@
+<!-- views/book.ejs -->
+<%- include('partials/header') %>
+
+<div class="book-detail-container">
+  <div class="book-detail">
+    <div class="book-cover-large">
+      <img
+        src="<%= coverUrl(book.isbn, 'M') %>"
+        alt="<%= book.title %> Cover"
+        onerror="this.onerror=null; this.src='<%= coverUrl(book.id, 'M', 'id') %>'"
+      />
+    </div>
+    <div class="book-info">
+      <h1 class="book-title"><%= book.title %></h1>
+      <p class="book-author">by <%= book.author %></p>
+      <p class="book-rating">Rating: <span>⭐ <%= book.rating %></span></p>
+      <p class="book-date">
+        Read on: <%= book.read_date.toLocaleDateString() %>
+      </p>
+      <div class="book-notes-full">
+        <h2>Notes</h2>
+        <div class="notes-content"><%= book.notes %></div>
+      </div>
+      <div class="book-actions">
+        <a class="btn btn-edit" href="/books/edit/<%= book.id %>">Edit</a>
+        <form
+          action="/books/<%= book.id %>?_method=DELETE"
+          method="POST"
+          style="display: inline"
+        >
+          <button class="btn btn-delete" type="submit">Delete</button>
+        </form>
+        <a class="btn btn-back" href="/books">Back to Books</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -6,13 +6,20 @@ const pool = require("../db");
 // Get all books
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM books ORDER BY read_date DESC"
-    );
-    res.render("books", {
-      books: result.rows,
-      async: true, // Enable async/await in views
-    });
+    let query = "SELECT * FROM books";
+    const sortBy = req.query.sort;
+
+    // Add sorting based on query parameter
+    if (sortBy === "rating") {
+      query += " ORDER BY rating DESC, read_date DESC";
+    } else if (sortBy === "date") {
+      query += " ORDER BY read_date DESC";
+    } else {
+      query += " ORDER BY read_date DESC"; // Default sorting
+    }
+
+    const result = await pool.query(query);
+    res.render("books", { books: result.rows });
   } catch (err) {
     console.error(err);
     res.send("Error fetching books");
@@ -21,7 +28,13 @@ router.get("/", async (req, res) => {
 
 // Add new book form
 router.get("/new", (req, res) => {
-  res.render("addBook", { async: true });
+  // Get pre-filled data from query parameters if available
+  const preFilledData = {
+    title: req.query.title || "",
+    author: req.query.author || "",
+    isbn: req.query.isbn || "",
+  };
+  res.render("newBook", { book: preFilledData });
 });
 
 // Add new book
@@ -45,10 +58,7 @@ router.get("/edit/:id", async (req, res) => {
     const result = await pool.query("SELECT * FROM books WHERE id = $1", [
       req.params.id,
     ]);
-    res.render("editBook", {
-      book: result.rows[0],
-      async: true, // Enable async/await in views
-    });
+    res.render("editBook", { book: result.rows[0] });
   } catch (err) {
     console.error(err);
     res.send("Error retrieving book for edit");
@@ -78,6 +88,22 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.send("Error deleting book");
+  }
+});
+
+// Get single book
+router.get("/:id", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM books WHERE id = $1", [
+      req.params.id,
+    ]);
+    if (result.rows.length === 0) {
+      return res.redirect("/books");
+    }
+    res.render("book", { book: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.redirect("/books");
   }
 });
 

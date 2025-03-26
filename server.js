@@ -3,7 +3,6 @@ const express = require("express");
 const app = express();
 const bookRoutes = require("./routes/bookRoutes");
 const methodOverride = require("method-override");
-const axios = require("axios");
 require("dotenv").config();
 
 // Middleware
@@ -15,33 +14,10 @@ app.set("view engine", "ejs");
 // Enable async/await in views
 app.set("async", true);
 
-// Helper to generate Open Library cover URLs with error handling
-app.locals.coverUrl = async function (isbn, size = "M") {
-  try {
-    // Clean the ISBN
-    isbn = isbn.replace(/[-\s]/g, "");
-
-    // Check if cover exists
-    const coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-${size}.jpg`;
-    const response = await axios.get(coverUrl, { responseType: "arraybuffer" });
-
-    // Check if the response is actually an image
-    const contentType = response.headers["content-type"];
-    if (
-      response.status === 200 &&
-      contentType &&
-      contentType.includes("image")
-    ) {
-      return coverUrl;
-    } else {
-      // If not a valid image, return a default cover
-      return "https://via.placeholder.com/150x200?text=No+Cover";
-    }
-  } catch (error) {
-    console.error("Error checking cover:", error.message);
-    // Return a default cover image
-    return "https://via.placeholder.com/150x200?text=No+Cover";
-  }
+// Helper to generate Open Library cover URLs
+app.locals.coverUrl = function (identifier, size = "L", type = "isbn") {
+  // Use either ISBN or ID for the cover URL from the Open Library Covers API
+  return `https://covers.openlibrary.org/b/${type}/${identifier}-${size}.jpg`;
 };
 
 // Routes

@@ -1,8 +1,23 @@
 <!-- views/books.ejs -->
 <%- include('partials/header') %>
 
+<div class="search-container">
+  <div class="search-box">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search books by title or ISBN..."
+    />
+    <div id="searchResults" class="search-results"></div>
+  </div>
+</div>
+
 <section class="page-title">
   <h2>My Books</h2>
+  <div class="sort-buttons">
+    <a href="/books?sort=rating" class="btn btn-sort">Sort by Rating</a>
+    <a href="/books?sort=date" class="btn btn-sort">Sort by Date</a>
+  </div>
 </section>
 
 <div class="book-grid">
@@ -10,15 +25,21 @@
   <div class="book-card">
     <div class="book-cover">
       <img
-        src="<%= await coverUrl(book.isbn, 'M') %>"
+        src="<%= coverUrl(book.isbn, 'M') %>"
         alt="<%= book.title %> Cover"
+        onerror="this.onerror=null; this.src='<%= coverUrl(book.id, 'M', 'id') %>'"
       />
     </div>
     <div class="book-details">
       <h3 class="book-title"><%= book.title %></h3>
       <p class="book-author">by <%= book.author %></p>
       <p class="book-rating">Rating: <span>⭐ <%= book.rating %></span></p>
-      <p class="book-notes"><%= book.notes.substring(0, 100) %>...</p>
+      <p
+        class="book-notes"
+        onclick="window.location.href='/books/<%= book.id %>'"
+      >
+        <%= book.notes.substring(0, 100) %>...
+      </p>
     </div>
     <div class="book-actions">
       <a class="btn btn-edit" href="/books/edit/<%= book.id %>">Edit</a>
@@ -31,3 +52,94 @@
 </div>
 
 <%- include('partials/footer') %>
+
+<script>
+  const searchInput = document.getElementById("searchInput");
+  const searchResults = document.getElementById("searchResults");
+  let searchTimeout;
+
+  searchInput.addEventListener("input", function (e) {
+    const searchTerm = e.target.value.trim();
+
+    // Clear previous timeout
+    clearTimeout(searchTimeout);
+
+    // Hide results if search is empty
+    if (!searchTerm) {
+      searchResults.style.display = "none";
+      return;
+    }
+
+    // Add delay to prevent too many API calls
+    searchTimeout = setTimeout(() => {
+      fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(
+          searchTerm
+        )}&limit=10`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          searchResults.innerHTML = "";
+
+          if (data.docs && data.docs.length > 0) {
+            data.docs.forEach((book) => {
+              const bookElement = document.createElement("div");
+              bookElement.className = "search-result-item";
+              const isbn = book.isbn ? book.isbn[0] : "";
+              bookElement.setAttribute("data-isbn", isbn);
+              bookElement.innerHTML = `
+                <div class="search-book-info">
+                  <h4>${book.title}</h4>
+                  ${book.author_name ? `<p>By ${book.author_name[0]}</p>` : ""}
+                  ${isbn ? `<p>ISBN: ${isbn}</p>` : ""}
+                </div>
+              `;
+              searchResults.appendChild(bookElement);
+            });
+            searchResults.style.display = "block";
+          } else {
+            searchResults.innerHTML =
+              '<div class="no-results">No books found</div>';
+            searchResults.style.display = "block";
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching search results:", error);
+          searchResults.innerHTML =
+            '<div class="error-message">Error fetching results</div>';
+          searchResults.style.display = "block";
+        });
+    }, 300); // 300ms delay
+  });
+
+  // Handle book selection
+  searchResults.addEventListener("click", function (e) {
+    if (e.target.closest(".search-result-item")) {
+      const bookElement = e.target.closest(".search-result-item");
+      const title = bookElement.querySelector("h4").textContent;
+      const author =
+        bookElement.querySelector("p")?.textContent.replace("By ", "") || "";
+      const isbn = bookElement.getAttribute("data-isbn");
+
+      // Redirect to add book form with pre-filled data
+      window.location.href = `/books/new?title=${encodeURIComponent(
+        title
+      )}&author=${encodeURIComponent(author)}&isbn=${encodeURIComponent(isbn)}`;
+    }
+  });
+
+  // Close search results when clicking outside
+  document.addEventListener("click", function (e) {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+      searchResults.style.display = "none";
+    }
+  });
+
+  function toggleNotes(element) {
+    if (element.classList.contains("expanded")) {
+      element.classList.remove("expanded");
+    } else {
+      element.classList.add("expanded");
+    }
+  }
+</script>
